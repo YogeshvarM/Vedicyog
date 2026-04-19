@@ -364,24 +364,23 @@
     display: none !important;
 }
 
-/* Show PDF-only elements */
+/* PDF-only elements are hidden (no cover page in PDFs) */
 .pdf-only {
     display: none !important;
 }
 
-.pdf-mode .pdf-only {
-    display: block !important;
-}
+/* Disabled: no pdf-only elements shown in PDF mode */
+/* .pdf-mode .pdf-only { display: block !important; } */
 
-/* PDF page break classes */
+/* PDF page break classes - disabled to avoid forcing blank pages */
 .pdf-page-break-before {
-    page-break-before: always;
-    break-before: page;
+    /* page-break-before: always; */
+    /* break-before: page; */
 }
 
 .pdf-page-break-after {
-    page-break-after: always;
-    break-after: page;
+    /* page-break-after: always; */
+    /* break-after: page; */
 }
 
 /* PDF mode - expand all for printing */

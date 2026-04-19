@@ -109,10 +109,6 @@ function renderResults(data) {
 function renderBirthInfo(birthData, panchanga) {
     const container = document.getElementById('birth-info');
     container.innerHTML = `
-        <div class="text-center mb-4 pdf-only hidden">
-            <h1 class="text-2xl font-bold text-amber-400">Vedicyog</h1>
-            <p class="text-gray-400 text-sm">Vedic Astrology Report</p>
-        </div>
         <h2 class="text-xl font-semibold mb-4 text-amber-300">Birth Details</h2>
         <div class="info-grid">
             <div class="info-item">
