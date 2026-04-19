@@ -510,6 +510,12 @@
     box-sizing: border-box;
 }
 
+/* In PDF mode, remove padding to avoid white gaps */
+.pdf-mode .pdf-container {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
 .pdf-mode,
 .pdf-mode html,
 .pdf-mode body,
