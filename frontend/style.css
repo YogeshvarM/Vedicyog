@@ -526,6 +526,24 @@
     print-color-adjust: exact !important;
 }
 
+/* Remove any outer borders/shadows and force full-width for PDF to avoid left-side lines */
+.pdf-mode #app,
+.pdf-mode .pdf-container,
+.pdf-mode .bg-gray-800 {
+    box-shadow: none !important;
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* Ensure no visible outline or accidental strokes */
+.pdf-mode * {
+    outline: none !important;
+}
+
 /* Prevent page breaks inside important blocks so they don't split across pages */
 .pdf-mode .info-grid,
 .pdf-mode .dasha-section-wrapper,
