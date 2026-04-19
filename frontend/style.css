@@ -506,11 +506,12 @@
 
 .pdf-container {
     background-color: #111827; /* UI dark background */
-    padding: 10mm; /* internal padding that appears as colored margin */
+    padding: 0; /* no padding - keeps content edge-to-edge */
     box-sizing: border-box;
+    margin: 0;
 }
 
-/* In PDF mode, remove padding to avoid white gaps */
+/* In PDF mode, remove all padding/margin to avoid blank pages */
 .pdf-mode .pdf-container {
     padding: 0 !important;
     margin: 0 !important;
@@ -542,6 +543,24 @@
     border-radius: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Strip margins from all sections and children to eliminate blank pages */
+.pdf-mode [class*="bg-gray"] {
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+}
+
+.pdf-mode #birth-info,
+.pdf-mode #d1-chart,
+.pdf-mode #planet-legend,
+.pdf-mode #chart-tabs,
+.pdf-mode #divisional-charts,
+.pdf-mode #dasha-section {
+    margin: 0 !important;
 }
 
 /* Ensure no visible outline or accidental strokes */

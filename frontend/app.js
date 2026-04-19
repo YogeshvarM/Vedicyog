@@ -275,14 +275,16 @@ async function downloadPDF() {
         filename: `Vedicyog-${currentChartData?.birth_data?.name || 'chart'}.pdf`,
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: {
-            scale: 1.5,
+            scale: 1,
             useCORS: true,
             logging: false,
-            backgroundColor: '#111827'
+            backgroundColor: '#111827',
+            removeContainer: true
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
         pagebreak: {
-            mode: 'css'
+            mode: 'css',
+            avoid: ['strong']
         }
     };
 
