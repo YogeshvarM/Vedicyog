@@ -541,6 +541,7 @@
 }
 
 /* Force clear separation: ensure major sections (Rasi/D1, divisional charts, dasha) start on new pages */
+.pdf-mode #birth-info,
 .pdf-mode .pdf-page-break-before {
     page-break-before: always !important;
     break-before: page !important;
@@ -551,6 +552,46 @@
 .pdf-mode .dasha-header {
     page-break-after: avoid;
     break-after: avoid;
+}
+
+/* PDF cover page styling */
+.pdf-cover {
+    display: none;
+}
+
+.pdf-mode .pdf-cover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 297mm; /* A4 height to create a full page */
+    background-color: #111827;
+    page-break-after: always;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+.pdf-cover .cover-inner {
+    text-align: center;
+}
+
+.pdf-cover h1 {
+    color: #fbbf24;
+}
+
+/* PDF end filler to ensure last page background is dark */
+.pdf-end {
+    display: none;
+}
+
+.pdf-mode .pdf-end {
+    display: block;
+    width: 100%;
+    height: 40mm; /* small dark footer page if needed */
+    background-color: #111827;
+    page-break-before: always;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
 }
 
 /* Print styles for PDF */
