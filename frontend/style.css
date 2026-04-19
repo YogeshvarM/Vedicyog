@@ -541,7 +541,6 @@
 }
 
 /* Force clear separation: ensure major sections (Rasi/D1, divisional charts, dasha) start on new pages */
-.pdf-mode #birth-info,
 .pdf-mode .pdf-page-break-before {
     page-break-before: always !important;
     break-before: page !important;
