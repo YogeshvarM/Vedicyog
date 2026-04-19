@@ -91,8 +91,7 @@ function renderResults(data) {
     document.getElementById('form-section').classList.add('hidden');
     document.getElementById('results-section').classList.remove('hidden');
 
-    renderBirthInfo(data.birth_data);
-    renderPanchanga(data.panchanga);
+    renderBirthInfo(data.birth_data, data.panchanga);
     renderChart('d1-chart', data.d1_chart, 'D1 - Rasi');
     renderPlanetLegend('planet-legend', data.d1_chart);
 
@@ -107,7 +106,7 @@ function renderResults(data) {
     }
 }
 
-function renderBirthInfo(birthData) {
+function renderBirthInfo(birthData, panchanga) {
     const container = document.getElementById('birth-info');
     container.innerHTML = `
         <div class="text-center mb-4 pdf-only hidden">
@@ -140,34 +139,9 @@ function renderBirthInfo(birthData) {
                 <div class="info-label">Moon Sign</div>
                 <div class="info-value">${birthData.moon_sign}</div>
             </div>
-        </div>
-    `;
-}
-
-function renderPanchanga(panchanga) {
-    const container = document.getElementById('panchanga-section');
-    container.innerHTML = `
-        <h2 class="text-xl font-semibold mb-4 text-amber-300">Panchanga</h2>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Tithi</div>
-                <div class="info-value">${panchanga.tithi || '-'}</div>
-            </div>
             <div class="info-item">
                 <div class="info-label">Nakshatra</div>
-                <div class="info-value">${panchanga.nakshatra || '-'}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Yoga</div>
-                <div class="info-value">${panchanga.yoga || '-'}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Karana</div>
-                <div class="info-value">${panchanga.karana || '-'}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Vaara</div>
-                <div class="info-value">${panchanga.vaara || '-'}</div>
+                <div class="info-value">${panchanga?.nakshatra || '-'}</div>
             </div>
         </div>
     `;
