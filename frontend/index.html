@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vedicyog - Vedic Astrology Charts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-amber-400 mb-2">Vedicyog</h1>
+            <p class="text-gray-400">South Indian Style Divisional Charts</p>
+        </header>
+
+        <!-- Birth Data Form -->
+        <section id="form-section" class="bg-gray-800 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
+            <h2 class="text-xl font-semibold mb-4 text-amber-300">Enter Birth Details</h2>
+            <form id="birth-form" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Name</label>
+                        <input type="text" id="name" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-amber-400 focus:outline-none" placeholder="Your name">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Date of Birth *</label>
+                        <input type="date" id="date" required class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-amber-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Time of Birth *</label>
+                        <input type="time" id="time" required class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-amber-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Place of Birth *</label>
+                        <input type="text" id="place" required class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:border-amber-400 focus:outline-none" placeholder="City, Country">
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <button type="submit" id="submit-btn" class="bg-amber-500 hover:bg-amber-600 text-gray-900 font-semibold px-6 py-2 rounded transition">
+                        Generate Chart
+                    </button>
+                    <button type="button" id="load-sample" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded transition">
+                        Load Sample
+                    </button>
+                </div>
+            </form>
+            <div id="error-msg" class="hidden mt-4 p-3 bg-red-900/50 border border-red-700 rounded text-red-300"></div>
+            <div id="loading" class="hidden mt-4 text-center text-amber-400">
+                <svg class="animate-spin h-8 w-8 mx-auto mb-2" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Calculating chart...
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results-section" class="hidden">
+            <!-- Download Button -->
+            <div class="flex justify-end mb-4 gap-2">
+                <button id="download-pdf" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded flex items-center gap-2 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Download PDF
+                </button>
+                <button id="new-chart" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded transition">
+                    New Chart
+                </button>
+            </div>
+
+            <!-- PDF Content -->
+            <div id="pdf-content" class="pdf-container">
+                <!-- Page 1: Birth Info & Panchanga & D1 Chart -->
+                <div id="birth-info" class="bg-gray-800 rounded-lg p-6 mb-6"></div>
+
+                <div id="panchanga-section" class="bg-gray-800 rounded-lg p-6 mb-6"></div>
+
+                <div class="bg-gray-800 rounded-lg p-6 mb-6">
+                    <h2 class="text-xl font-semibold mb-4 text-amber-300">Rasi Chart (D1) - Birth Chart</h2>
+                    <div id="d1-chart" class="flex justify-center mb-4"></div>
+                    <div id="planet-legend" class="mt-4"></div>
+                </div>
+
+                <!-- Page 2+: Divisional Charts -->
+                <div class="bg-gray-800 rounded-lg p-6 mb-6 pdf-page-break-before">
+                    <h2 class="text-xl font-semibold mb-4 text-amber-300">Divisional Charts</h2>
+                    <div id="chart-tabs" class="flex flex-wrap gap-2 mb-6 no-print"></div>
+                    <div id="divisional-charts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+
+                <!-- Dasha Section -->
+                <div class="bg-gray-800 rounded-lg p-6 mb-6 pdf-page-break-before">
+                    <h2 class="text-xl font-semibold mb-4 text-amber-300">Vimshottari Dasha</h2>
+                    <div id="dasha-section"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Tooltip (Desktop) -->
+    <div id="tooltip" class="fixed hidden bg-gray-800 border border-amber-500 text-white px-4 py-3 rounded-lg shadow-xl text-sm z-[9999] min-w-[150px] pointer-events-none"></div>
+
+    <!-- Planet Info Panel (Mobile) -->
+    <div id="planet-info-panel" class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t-2 border-amber-500 p-4 z-[9999] hidden shadow-2xl"></div>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 text-gray-500 text-sm border-t border-gray-700 mt-8">
+        <p>&copy; 2024 Vedicyog. All rights reserved.</p>
+    </footer>
+
+    <script src="/static/dignity.js"></script>
+    <script src="/static/chart-renderer.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>

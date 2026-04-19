@@ -1,0 +1,529 @@
+/* South Indian Chart Grid Styles */
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    width: 320px;
+    height: 320px;
+    border: 2px solid #d97706;
+    background: #1f2937;
+}
+
+.chart-cell {
+    border: 1px solid #4b5563;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
+    min-height: 80px;
+    overflow: hidden;
+}
+
+.chart-cell.center {
+    grid-column: span 2;
+    grid-row: span 2;
+    background: #374151;
+    justify-content: center;
+    align-items: center;
+}
+
+.chart-cell .sign-label {
+    font-size: 10px;
+    color: #9ca3af;
+    position: absolute;
+    top: 2px;
+    left: 4px;
+}
+
+.chart-cell .house-number {
+    font-size: 9px;
+    color: #6b7280;
+    position: absolute;
+    top: 2px;
+    right: 4px;
+}
+
+.chart-cell .planets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 14px;
+    max-width: 100%;
+}
+
+.planet-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+}
+
+.planet-badge:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 8px currentColor;
+}
+
+/* Dignity Colors */
+.dignity-exalted {
+    background: #065f46;
+    color: #34d399;
+    border: 1px solid #34d399;
+}
+
+.dignity-debilitated {
+    background: #7f1d1d;
+    color: #fca5a5;
+    border: 1px solid #f87171;
+}
+
+.dignity-own {
+    background: #1e40af;
+    color: #93c5fd;
+    border: 1px solid #60a5fa;
+}
+
+.dignity-moolatrikona {
+    background: #5b21b6;
+    color: #c4b5fd;
+    border: 1px solid #a78bfa;
+}
+
+.dignity-friend {
+    background: #065f46;
+    color: #6ee7b7;
+    border: 1px solid #34d399;
+}
+
+.dignity-neutral {
+    background: #374151;
+    color: #d1d5db;
+    border: 1px solid #6b7280;
+}
+
+.dignity-enemy {
+    background: #92400e;
+    color: #fcd34d;
+    border: 1px solid #f59e0b;
+}
+
+/* Ascendant house highlight */
+.chart-cell.asc-house {
+    background: linear-gradient(135deg, #92400e 0%, #78350f 100%);
+    border: 2px solid #fbbf24;
+    box-shadow: inset 0 0 10px rgba(251, 191, 36, 0.3);
+}
+
+.asc-marker {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    font-size: 9px;
+    color: #fbbf24;
+    font-weight: bold;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+/* Dasha Accordion */
+.dasha-item {
+    border: 1px solid #4b5563;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.dasha-header {
+    background: #374151;
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.dasha-header:hover {
+    background: #4b5563;
+}
+
+.dasha-header.active {
+    background: #d97706;
+    color: #1f2937;
+}
+
+.dasha-header .planet-name {
+    font-weight: 600;
+}
+
+.dasha-header .dates {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.dasha-header.active .dates {
+    color: #374151;
+}
+
+.dasha-content {
+    display: none;
+    padding: 8px 16px;
+    background: #1f2937;
+}
+
+.dasha-content.open {
+    display: block;
+}
+
+.antardasha-item {
+    padding: 8px 12px;
+    margin: 4px 0;
+    background: #374151;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.antardasha-item:hover {
+    background: #4b5563;
+}
+
+.antardasha-item.current {
+    border-left: 3px solid #fbbf24;
+}
+
+.pratyantardasha-list {
+    display: none;
+    padding-left: 16px;
+    margin-top: 8px;
+}
+
+.pratyantardasha-list.open {
+    display: block;
+}
+
+.pratyantardasha-item {
+    padding: 4px 8px;
+    font-size: 12px;
+    color: #9ca3af;
+    border-left: 2px solid #4b5563;
+    margin: 2px 0;
+}
+
+/* Chart tabs */
+.chart-tab {
+    padding: 6px 12px;
+    background: #374151;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.chart-tab:hover {
+    background: #4b5563;
+}
+
+.chart-tab.active {
+    background: #d97706;
+    color: #1f2937;
+}
+
+/* Legend */
+.legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.legend-badge {
+    width: 24px;
+    height: 20px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+}
+
+/* Info cards */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.info-item {
+    background: #374151;
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.info-label {
+    font-size: 11px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f3f4f6;
+    margin-top: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chart-grid {
+        width: 100%;
+        max-width: 320px;
+        height: auto;
+        aspect-ratio: 1;
+    }
+
+    .chart-cell {
+        min-height: 0;
+        padding: 2px;
+    }
+
+    .planet-badge {
+        font-size: 9px;
+        padding: 2px 3px;
+    }
+
+    .chart-cell .sign-label {
+        font-size: 8px;
+    }
+
+    .chart-cell .house-number {
+        font-size: 7px;
+    }
+
+    .chart-cell .planets {
+        margin-top: 12px;
+        gap: 1px;
+    }
+
+    .info-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .legend-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #divisional-charts {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dasha-header {
+        padding: 10px 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .dasha-header .dates {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-grid {
+        max-width: 280px;
+    }
+
+    .planet-badge {
+        font-size: 8px;
+        padding: 1px 2px;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Hide tabs in PDF */
+.pdf-mode .no-print,
+.pdf-mode #chart-tabs {
+    display: none !important;
+}
+
+/* Show PDF-only elements */
+.pdf-only {
+    display: none !important;
+}
+
+.pdf-mode .pdf-only {
+    display: block !important;
+}
+
+/* PDF page break classes */
+.pdf-page-break-before {
+    page-break-before: always;
+    break-before: page;
+}
+
+.pdf-page-break-after {
+    page-break-after: always;
+    break-after: page;
+}
+
+/* PDF mode - expand all for printing */
+.pdf-mode .dasha-content,
+.pdf-mode .pratyantardasha-list {
+    display: block !important;
+}
+
+.pdf-mode .chart-grid {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.pdf-mode .chart-item {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 20px;
+}
+
+.pdf-mode .dasha-item {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.pdf-mode #divisional-charts {
+    display: block;
+    text-align: center;
+}
+
+.pdf-mode .chart-item {
+    background: #374151;
+    padding: 10px;
+    border-radius: 6px;
+    display: inline-block;
+    vertical-align: top;
+    width: 48%;
+    margin: 4px 1%;
+    box-sizing: border-box;
+}
+
+.pdf-mode .chart-item h3 {
+    text-align: center;
+    margin: 0 0 6px 0;
+    font-size: 12px;
+}
+
+.pdf-mode .chart-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.pdf-mode .chart-grid {
+    width: 200px;
+    height: 200px;
+}
+
+.pdf-mode .chart-cell {
+    min-height: 50px;
+}
+
+.pdf-mode .legend-grid {
+    font-size: 11px;
+}
+
+.pdf-mode .info-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.pdf-mode .dasha-content {
+    display: none !important;
+}
+
+.pdf-mode .dasha-header {
+    cursor: default;
+}
+
+.pdf-mode .dasha-section-wrapper {
+    columns: 2;
+    column-gap: 16px;
+}
+
+.pdf-mode .dasha-item {
+    break-inside: avoid;
+    margin-bottom: 8px;
+}
+
+.pdf-mode .planet-badge {
+    font-size: 8px;
+    padding: 1px 2px;
+}
+
+.pdf-mode .sign-label {
+    font-size: 8px;
+}
+
+.pdf-mode .house-number {
+    font-size: 7px;
+}
+
+.pdf-mode .asc-marker {
+    font-size: 7px;
+    padding: 0 2px;
+}
+
+.pdf-mode .chart-cell.center {
+    font-size: 10px;
+}
+
+.pdf-mode .chart-cell.center .text-xs {
+    font-size: 8px;
+}
+
+.pdf-mode .chart-cell .planets {
+    margin-top: 10px;
+    gap: 1px;
+}
+
+/* Print styles for PDF */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .chart-grid {
+        border-color: #333;
+        page-break-inside: avoid;
+    }
+
+    .chart-cell {
+        border-color: #999;
+    }
+
+    .bg-gray-800 {
+        background: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .chart-cell.asc-house {
+        background: #fef3c7 !important;
+        border-color: #d97706 !important;
+    }
+}
