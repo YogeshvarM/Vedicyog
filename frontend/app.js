@@ -273,8 +273,9 @@ async function downloadPDF() {
 
     await new Promise(r => setTimeout(r, 300));
 
+    // Use zero margins so background fills page; internal padding kept via .pdf-container
     const options = {
-        margin: [10, 10, 10, 10],
+        margin: 0,
         filename: `Vedicyog-${currentChartData?.birth_data?.name || 'chart'}.pdf`,
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: {
@@ -290,6 +291,10 @@ async function downloadPDF() {
             avoid: ['.chart-item', '.dasha-item', '.info-grid', '.chart-grid']
         }
     };
+
+    // Ensure element has explicit dark background and box-sizing so html2canvas captures full area
+    element.style.backgroundColor = '#111827';
+    element.style.boxSizing = 'border-box';
 
     try {
         await html2pdf().set(options).from(element).save();

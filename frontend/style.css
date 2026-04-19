@@ -499,31 +499,59 @@
     gap: 1px;
 }
 
+/* Full-bleed PDF rules: remove page margins and ensure container background fills page */
+@page {
+    size: A4;
+    margin: 0;
+}
+
+.pdf-container {
+    background-color: #111827; /* UI dark background */
+    padding: 10mm; /* internal padding that appears as colored margin */
+    box-sizing: border-box;
+}
+
+.pdf-mode,
+.pdf-mode html,
+.pdf-mode body,
+.pdf-mode .pdf-container {
+    background-color: #111827 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+/* Ensure elements preserve background colors */
+.pdf-mode * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
 /* Print styles for PDF */
 @media print {
+    /* Use app dark background for printed pages */
     body {
-        background: white !important;
-        color: black !important;
+        background: #111827 !important;
+        color: #f3f4f6 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
 
     .chart-grid {
-        border-color: #333;
+        border-color: #d97706;
         page-break-inside: avoid;
     }
 
     .chart-cell {
-        border-color: #999;
+        border-color: #6b7280;
     }
 
     .bg-gray-800 {
-        background: #f5f5f5 !important;
+        background: #111827 !important;
         -webkit-print-color-adjust: exact;
     }
 
     .chart-cell.asc-house {
-        background: #fef3c7 !important;
-        border-color: #d97706 !important;
+        background: linear-gradient(135deg, #92400e 0%, #78350f 100%) !important;
+        border-color: #fbbf24 !important;
     }
 }
