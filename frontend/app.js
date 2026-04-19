@@ -280,7 +280,8 @@ async function downloadPDF() {
         html2canvas: {
             scale: 2,
             useCORS: true,
-            logging: false
+            logging: false,
+            backgroundColor: '#111827' // ensure dark background is captured
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: {
