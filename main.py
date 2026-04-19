@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -16,6 +16,11 @@ from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 from timezonefinder import TimezoneFinder
 from datetime import timezone as dt_timezone
 import pytz
+import os
+import shutil
+import asyncio
+import logging
+from typing import Optional
 
 app = FastAPI(
     title="Vedic Astrology API",
@@ -26,6 +31,15 @@ app = FastAPI(
         {"url": "http://localhost:8000", "description": "Local Development"}
     ]
 )
+
+# Cache directory used by the application (files to be cleared periodically)
+CACHE_DIR = Path(__file__).parent / "cache"
+
+# Ensure cache dir exists
+CACHE_DIR.mkdir(exist_ok=True)
+
+# Configure basic logging
+logging.basicConfig(level=logging.INFO)
 
 # Add CORS middleware for API access from different domains
 app.add_middleware(
@@ -291,6 +305,61 @@ def panchanga_to_json(chart) -> Dict[str, Any]:
         "karana": getattr(p, "karana", None),
         "vaara": getattr(p, "vaara", None),
     }
+
+
+# ---------------------- Cache management ----------------------
+def clear_cache_dir() -> None:
+    """Remove all files and subdirectories inside CACHE_DIR."""
+    try:
+        if not CACHE_DIR.exists():
+            CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            return
+
+        for child in CACHE_DIR.iterdir():
+            try:
+                if child.is_dir():
+                    shutil.rmtree(child)
+                else:
+                    child.unlink()
+            except Exception as e:
+                logging.exception(f"Failed to remove cache item {child}: {e}")
+        logging.info("Cache directory cleared")
+    except Exception:
+        logging.exception("Failed to clear cache directory")
+
+
+async def _periodic_cache_clearer(interval_seconds: int = 1800):
+    """Background task that clears cache every `interval_seconds` seconds."""
+    while True:
+        try:
+            clear_cache_dir()
+        except Exception:
+            logging.exception("Error during periodic cache clear")
+        await asyncio.sleep(interval_seconds)
+
+
+@app.on_event("startup")
+async def _start_cache_background_task():
+    # Start background task that clears cache every 30 minutes
+    try:
+        asyncio.create_task(_periodic_cache_clearer(1800))
+        logging.info("Started periodic cache clearer (30m interval)")
+    except Exception:
+        logging.exception("Failed to start cache clearer task")
+
+
+@app.post("/admin/clear_cache")
+def admin_clear_cache(x_admin_secret: Optional[str] = Header(None)):
+    """Manually trigger cache clear. If `CACHE_CLEAR_SECRET` env var is set, the header `X-Admin-Secret` must match it."""
+    secret = os.environ.get("CACHE_CLEAR_SECRET")
+    if secret:
+        if not x_admin_secret or x_admin_secret != secret:
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+    clear_cache_dir()
+    return {"status": "ok", "cleared": True}
+
+# --------------------------------------------------------------
 
 
 def planets_to_json(chart) -> List[Dict[str, Any]]:
