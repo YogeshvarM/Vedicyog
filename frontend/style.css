@@ -587,11 +587,17 @@
 .pdf-mode .pdf-end {
     display: block;
     width: 100%;
-    height: 40mm; /* small dark footer page if needed */
-    background-color: #111827;
+    height: 297mm; /* full A4 dark filler page to avoid white trailing page */
+    background-color: #111827 !important;
     page-break-before: always;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+}
+
+/* Ensure no default margins on html/body when printing */
+html, body {
+    margin: 0;
+    padding: 0;
 }
 
 /* Print styles for PDF */

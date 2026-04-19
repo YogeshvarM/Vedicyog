@@ -275,14 +275,16 @@ async function downloadPDF() {
 
     // Use zero margins so background fills page; internal padding kept via .pdf-container
     const options = {
-        margin: 0,
+        margin: [0, 0, 0, 0],
         filename: `Vedicyog-${currentChartData?.birth_data?.name || 'chart'}.pdf`,
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: {
             scale: 2,
             useCORS: true,
             logging: false,
-            backgroundColor: '#111827' // ensure dark background is captured
+            backgroundColor: '#111827', // ensure dark background is captured
+            windowWidth: document.documentElement.clientWidth,
+            windowHeight: document.documentElement.clientHeight
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: {
