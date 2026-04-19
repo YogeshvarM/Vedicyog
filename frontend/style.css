@@ -410,12 +410,26 @@
     box-sizing: border-box;
 }
 
+/* PAGE 1: Birth info + Rasi chart (D1) */
 .pdf-mode #birth-info,
-.pdf-mode #d1-chart,
-.pdf-mode #planet-legend,
-.pdf-mode #divisional-charts,
-.pdf-mode #dasha-section {
+.pdf-mode #d1-chart {
+    margin: 0 0 8px 0;
+    padding: 0;
+    page-break-inside: avoid;
+    page-break-after: avoid;
+}
+
+/* Planet legend stays on page 1 or transitions to page 2 */
+.pdf-mode #planet-legend {
     margin: 0 0 16px 0;
+    padding: 0;
+    page-break-inside: avoid;
+}
+
+/* LAST PAGE: Dasha section (force to new page) */
+.pdf-mode #dasha-section {
+    page-break-before: always;
+    margin: 0;
     padding: 0;
     page-break-inside: avoid;
 }
@@ -444,17 +458,28 @@
     margin-bottom: 1px;
 }
 
-/* Chart grid - sized for PDF printing */
-.pdf-mode .chart-grid {
+/* Chart grid - sized for PDF printing (D1 chart on first page) */
+.pdf-mode #d1-chart .chart-grid {
     width: 180px;
     height: 180px;
     border: 2px solid #d97706;
     background: #1f2937;
     page-break-inside: avoid;
+    margin: 0 auto;
+}
+
+/* Divisional charts grid - smaller size for 2-column layout */
+.pdf-mode #divisional-charts .chart-grid {
+    width: 140px;
+    height: 140px;
+    border: 2px solid #d97706;
+    background: #1f2937;
+    page-break-inside: avoid;
+    margin: 0 auto;
 }
 
 .pdf-mode .chart-cell {
-    min-height: 44px;
+    min-height: 35px;
     padding: 2px;
     border: 1px solid #4b5563;
 }
@@ -477,24 +502,6 @@
     margin: 0.5px;
 }
 
-/* Chart item styling for divisional charts */
-.pdf-mode .chart-item {
-    display: inline-block;
-    width: 45%;
-    margin: 2px;
-    padding: 6px;
-    background: #1f2937;
-    border: 1px solid #374151;
-    page-break-inside: avoid;
-    vertical-align: top;
-    text-align: center;
-}
-
-.pdf-mode .chart-item h3 {
-    margin: 0 0 4px 0;
-    font-size: 10px;
-}
-
 .pdf-mode .chart-wrapper {
     display: flex;
     justify-content: center;
@@ -515,6 +522,25 @@
 .pdf-mode .legend-item {
     padding: 2px 4px;
     page-break-inside: avoid;
+}
+
+/* Chart item styling for divisional charts (2-column layout = 2 charts per row) */
+.pdf-mode .chart-item {
+    display: block;
+    width: 100%;
+    padding: 8px;
+    margin: 0;
+    background: #1f2937;
+    border: 1px solid #374151;
+    page-break-inside: avoid;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.pdf-mode .chart-item h3 {
+    margin: 0 0 6px 0;
+    font-size: 11px;
+    font-weight: 600;
 }
 
 /* Dasha section for PDF */
