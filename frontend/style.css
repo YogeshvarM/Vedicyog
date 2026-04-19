@@ -358,73 +358,141 @@
     }
 }
 
-/* Hide tabs in PDF */
+/* ============================================================== */
+/* INDEPENDENT PDF STYLING - Designed from scratch for PDF output */
+/* ============================================================== */
+
+/* Hide elements in PDF */
 .pdf-mode .no-print,
 .pdf-mode #chart-tabs {
     display: none !important;
 }
 
-/* PDF-only elements are hidden (no cover page in PDFs) */
 .pdf-only {
     display: none !important;
 }
 
-/* Disabled: no pdf-only elements shown in PDF mode */
-/* .pdf-mode .pdf-only { display: block !important; } */
-
-/* PDF page break classes - disabled to avoid forcing blank pages */
-.pdf-page-break-before {
-    /* page-break-before: always; */
-    /* break-before: page; */
+/* PDF-specific typography and spacing for print */
+.pdf-mode {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 10px;
+    line-height: 1.4;
+    color: #e5e7eb;
+    background-color: #111827;
 }
 
-.pdf-page-break-after {
-    /* page-break-after: always; */
-    /* break-after: page; */
+.pdf-mode h2 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 12px 0 8px 0;
+    color: #f3f4f6;
+    page-break-after: avoid;
 }
 
-/* PDF mode - expand all for printing */
-.pdf-mode .dasha-content,
-.pdf-mode .pratyantardasha-list {
-    display: block !important;
+.pdf-mode h3 {
+    font-size: 11px;
+    font-weight: 600;
+    margin: 6px 0 4px 0;
+    color: #d1d5db;
 }
 
-.pdf-mode .chart-grid {
-    page-break-inside: avoid;
-    break-inside: avoid;
+.pdf-mode p {
+    margin: 0;
+    padding: 0;
 }
 
-.pdf-mode .chart-item {
-    page-break-inside: avoid;
-    break-inside: avoid;
-    margin-bottom: 20px;
-}
-
-.pdf-mode .dasha-item {
-    page-break-inside: avoid;
-    break-inside: avoid;
-}
-
-.pdf-mode #divisional-charts {
-    display: block;
-    text-align: center;
-}
-
-.pdf-mode .chart-item {
-    background: #374151;
-    padding: 10px;
-    border-radius: 6px;
-    display: inline-block;
-    vertical-align: top;
-    width: 48%;
-    margin: 4px 1%;
+/* PDF layout base containers */
+.pdf-mode #pdf-content {
+    width: 100%;
+    margin: 0;
+    padding: 16px;
+    background-color: #111827;
     box-sizing: border-box;
 }
 
-.pdf-mode .chart-item h3 {
+.pdf-mode #birth-info,
+.pdf-mode #d1-chart,
+.pdf-mode #planet-legend,
+.pdf-mode #divisional-charts,
+.pdf-mode #dasha-section {
+    margin: 0 0 16px 0;
+    padding: 0;
+    page-break-inside: avoid;
+}
+
+/* Birth info grid - 2 columns for PDF */
+.pdf-mode .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 0;
+    padding: 8px;
+    background-color: #1f2937;
+    border: 1px solid #374151;
+}
+
+.pdf-mode .info-item {
+    padding: 4px 6px;
+    font-size: 9px;
+    page-break-inside: avoid;
+}
+
+.pdf-mode .info-item strong {
+    display: block;
+    font-size: 8px;
+    color: #9ca3af;
+    margin-bottom: 1px;
+}
+
+/* Chart grid - sized for PDF printing */
+.pdf-mode .chart-grid {
+    width: 180px;
+    height: 180px;
+    border: 2px solid #d97706;
+    background: #1f2937;
+    page-break-inside: avoid;
+}
+
+.pdf-mode .chart-cell {
+    min-height: 44px;
+    padding: 2px;
+    border: 1px solid #4b5563;
+}
+
+.pdf-mode .chart-cell.center {
+    background: #374151;
+}
+
+.pdf-mode .sign-label {
+    font-size: 7px;
+}
+
+.pdf-mode .house-number {
+    font-size: 6px;
+}
+
+.pdf-mode .planet-badge {
+    font-size: 7px;
+    padding: 1px 2px;
+    margin: 0.5px;
+}
+
+/* Chart item styling for divisional charts */
+.pdf-mode .chart-item {
+    display: inline-block;
+    width: 45%;
+    margin: 2px;
+    padding: 6px;
+    background: #1f2937;
+    border: 1px solid #374151;
+    page-break-inside: avoid;
+    vertical-align: top;
     text-align: center;
-    margin: 0 0 6px 0;
-    font-size: 12px;
+}
+
+.pdf-mode .chart-item h3 {
+    margin: 0 0 4px 0;
+    font-size: 10px;
 }
 
 .pdf-mode .chart-wrapper {
@@ -432,57 +500,78 @@
     justify-content: center;
 }
 
-.pdf-mode .chart-grid {
-    width: 200px;
-    height: 200px;
-}
-
-.pdf-mode .chart-cell {
-    min-height: 50px;
-}
-
+/* Legend styling for PDF */
 .pdf-mode .legend-grid {
-    font-size: 11px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    font-size: 8px;
+    padding: 8px;
+    background-color: #1f2937;
+    border: 1px solid #374151;
+    margin-top: 8px;
 }
 
-.pdf-mode .info-grid {
-    grid-template-columns: repeat(3, 1fr);
+.pdf-mode .legend-item {
+    padding: 2px 4px;
+    page-break-inside: avoid;
 }
 
+/* Dasha section for PDF */
 .pdf-mode .dasha-content {
-    display: none !important;
-}
-
-.pdf-mode .dasha-header {
-    cursor: default;
+    display: block !important;
 }
 
 .pdf-mode .dasha-section-wrapper {
     columns: 2;
-    column-gap: 16px;
+    column-gap: 12px;
+    padding: 8px;
+    background-color: #1f2937;
+    border: 1px solid #374151;
+}
+
+.pdf-mode .dasha-header {
+    font-weight: 600;
+    font-size: 10px;
+    margin: 6px 0 4px 0;
+    padding: 4px;
+    background-color: #111827;
+    page-break-after: avoid;
 }
 
 .pdf-mode .dasha-item {
+    padding: 3px 4px;
+    margin-bottom: 4px;
+    font-size: 8px;
+    page-break-inside: avoid;
     break-inside: avoid;
-    margin-bottom: 8px;
+    background-color: #111827;
+    border-left: 2px solid #d97706;
 }
 
-.pdf-mode .planet-badge {
-    font-size: 8px;
-    padding: 1px 2px;
-}
-
-.pdf-mode .sign-label {
-    font-size: 8px;
-}
-
-.pdf-mode .house-number {
+.pdf-mode .pratyantardasha-list {
+    display: block;
+    padding-left: 8px;
     font-size: 7px;
 }
 
-.pdf-mode .asc-marker {
-    font-size: 7px;
-    padding: 0 2px;
+/* Dignity colors - explicit for PDF */
+.pdf-mode .dignity-exalted {
+    color: #34d399;
+}
+
+.pdf-mode .dignity-debilitated {
+    color: #fca5a5;
+}
+
+.pdf-mode .dignity-own {
+    color: #93c5fd;
+}
+
+.pdf-mode .dignity-moolatrikona {
+    color: #c4b5fd;
+}
+
 }
 
 .pdf-mode .chart-cell.center {
@@ -494,141 +583,48 @@
 }
 
 .pdf-mode .chart-cell .planets {
-    margin-top: 10px;
+    margin-top: 6px;
     gap: 1px;
 }
 
-/* Full-bleed PDF rules: remove page margins and ensure container background fills page */
+/* ============================================================== */
+/* PDF PAGE AND CONTAINER SETUP */
+/* ============================================================== */
+
 @page {
     size: A4;
-    margin: 0;
+    margin: 16px;
 }
 
 .pdf-container {
-    background-color: #111827; /* UI dark background */
-    padding: 0; /* no padding - keeps content edge-to-edge */
-    box-sizing: border-box;
-    margin: 0;
-}
-
-/* In PDF mode, remove all padding/margin to avoid blank pages */
-.pdf-mode .pdf-container {
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.pdf-mode,
-.pdf-mode html,
-.pdf-mode body,
-.pdf-mode .pdf-container {
-    background-color: #111827 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-}
-
-/* Ensure elements preserve background colors */
-.pdf-mode * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-}
-
-/* Remove any outer borders/shadows and force full-width for PDF to avoid left-side lines */
-.pdf-mode #app,
-.pdf-mode .pdf-container,
-.pdf-mode .bg-gray-800 {
-    box-shadow: none !important;
-    border: none !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-radius: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Strip margins from all sections and children to eliminate blank pages */
-.pdf-mode [class*="bg-gray"] {
-    margin: 0 !important;
-    margin-bottom: 0 !important;
-    margin-top: 0 !important;
-}
-
-.pdf-mode #birth-info,
-.pdf-mode #d1-chart,
-.pdf-mode #planet-legend,
-.pdf-mode #chart-tabs,
-.pdf-mode #divisional-charts,
-.pdf-mode #dasha-section {
-    margin: 0 !important;
-}
-
-/* Ensure no visible outline or accidental strokes */
-.pdf-mode * {
-    outline: none !important;
-}
-
-/* Prevent page breaks inside important blocks so they don't split across pages */
-.pdf-mode .info-grid,
-.pdf-mode .dasha-section-wrapper,
-.pdf-mode .dasha-item,
-.pdf-mode .chart-item,
-.pdf-mode .chart-grid,
-.pdf-mode .divisional-charts,
-.pdf-mode #birth-info,
-.pdf-mode .bg-gray-800,
-.pdf-mode .pdf-container {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-}
-
-/* Force clear separation: ensure major sections (Rasi/D1, divisional charts, dasha) start on new pages */
-.pdf-mode .pdf-page-break-before {
-    page-break-before: always !important;
-    break-before: page !important;
-}
-
-/* If a block is still larger than a page, allow natural breaking but try to keep header with first content */
-.pdf-mode .info-item,
-.pdf-mode .dasha-header {
-    page-break-after: avoid;
-    break-after: avoid;
-}
-
-/* Removed .pdf-cover and .pdf-end styles (no extra PDF-only pages) */
-
-/* Ensure no default margins on html/body when printing */
-html, body {
+    width: 100%;
+    background-color: #111827;
+    color: #e5e7eb;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
-/* Print styles for PDF */
+/* Ensure all PDF elements preserve colors */
+.pdf-mode * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+}
+
+/* ============================================================== */
+/* PRINT MEDIA STYLES */
+/* ============================================================== */
+
 @media print {
-    /* Use app dark background for printed pages */
-    body {
-        background: #111827 !important;
-        color: #f3f4f6 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: #111827;
     }
 
-    .chart-grid {
-        border-color: #d97706;
-        page-break-inside: avoid;
-    }
-
-    .chart-cell {
-        border-color: #6b7280;
-    }
-
-    .bg-gray-800 {
-        background: #111827 !important;
-        -webkit-print-color-adjust: exact;
-    }
-
-    .chart-cell.asc-house {
-        background: linear-gradient(135deg, #92400e 0%, #78350f 100%) !important;
-        border-color: #fbbf24 !important;
+    .pdf-container {
+        padding: 0;
+        margin: 0;
     }
 }
