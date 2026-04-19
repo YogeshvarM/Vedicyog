@@ -526,6 +526,34 @@
     print-color-adjust: exact !important;
 }
 
+/* Prevent page breaks inside important blocks so they don't split across pages */
+.pdf-mode .info-grid,
+.pdf-mode .dasha-section-wrapper,
+.pdf-mode .dasha-item,
+.pdf-mode .chart-item,
+.pdf-mode .chart-grid,
+.pdf-mode .divisional-charts,
+.pdf-mode #birth-info,
+.pdf-mode .bg-gray-800,
+.pdf-mode .pdf-container {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
+
+/* Force clear separation: ensure major sections (Rasi/D1, divisional charts, dasha) start on new pages */
+.pdf-mode #birth-info,
+.pdf-mode .pdf-page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+}
+
+/* If a block is still larger than a page, allow natural breaking but try to keep header with first content */
+.pdf-mode .info-item,
+.pdf-mode .dasha-header {
+    page-break-after: avoid;
+    break-after: avoid;
+}
+
 /* Print styles for PDF */
 @media print {
     /* Use app dark background for printed pages */
