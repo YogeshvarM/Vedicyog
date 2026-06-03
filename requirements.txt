@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+jyotishganit
+geopy
+timezonefinder
+pytz
+pydantic
+aiofiles
