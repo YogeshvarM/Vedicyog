@@ -22,7 +22,7 @@ from pydantic import BaseModel
 
 import auth
 import openai_agent
-from auth import current_user
+from auth import current_user, require_admin
 from jyotish_tools import chart_data, resolve_birthplace
 from prompts import build_system_prompt
 from telemetry import RunRecorder, log, setup_logging, usage_report
@@ -40,6 +40,27 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 setup_logging()
 app = FastAPI(title="VedicYog")
+
+
+# Every browser gets a long-lived random device id, used to link accounts made on it.
+@app.middleware("http")
+async def device_cookie(request: Request, call_next):
+    device = auth.valid_device(request.cookies.get(auth.DEVICE_COOKIE))
+    request.state.device = device or auth.new_device_id()
+    response = await call_next(request)
+    if not device:
+        response.set_cookie(auth.DEVICE_COOKIE, request.state.device, max_age=5 * 365 * 86400,
+                            httponly=True, samesite="lax", secure=_https(request))
+    return response
+
+
+def _https(request: Request) -> bool:
+    return request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+
+
+def client_ip(request: Request) -> str | None:
+    forwarded = request.headers.get("x-forwarded-for")  # Render's proxy puts the visitor first
+    return forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else None)
 
 
 # ---------- conversation store ----------
@@ -100,7 +121,8 @@ def sse(event: dict) -> str:
     return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
 
-async def run_consultation(conv_id: str, message: str, effort: str | None, username: str):
+async def run_consultation(conv_id: str, message: str, effort: str | None, username: str,
+                           device: str, ticket: dict | None):
     store = load_store()
     conv = store[conv_id]
     conv["messages"].append({"role": "user", "text": message, "at": now_iso()})
@@ -137,9 +159,9 @@ async def run_consultation(conv_id: str, message: str, effort: str | None, usern
         rec.on_openai_result(model, state["response_id"], openai_agent.price(model))
 
     if not answer.strip():
-        auth.refund_question(username)  # no answer: the question does not count
+        auth.refund_question(ticket)  # no answer: the question does not count
     run = rec.finish(answer, error)
-    yield sse({"type": "done", "run": run, "account": auth.account(username)})
+    yield sse({"type": "done", "run": run, "account": auth.account(username, device)})
 
     store = load_store()
     store[conv_id]["session_id"] = conv.get("session_id")
@@ -155,23 +177,24 @@ async def run_consultation(conv_id: str, message: str, effort: str | None, usern
 # ---------- accounts ----------
 
 def _set_session(request: Request, response: Response, username: str) -> None:
-    https = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
     response.set_cookie(auth.COOKIE, auth.make_session(username), max_age=auth.SESSION_DAYS * 86400,
-                        httponly=True, samesite="lax", secure=https)
+                        httponly=True, samesite="lax", secure=_https(request))
 
 
 @app.post("/api/signup")
 def signup(creds: Credentials, request: Request, response: Response):
-    username = auth.create_user(creds.username, creds.password)
+    device = request.state.device
+    username = auth.create_user(creds.username, creds.password, device, client_ip(request))
     _set_session(request, response, username)
-    return auth.account(username)
+    return auth.account(username, device)
 
 
 @app.post("/api/login")
 def login(creds: Credentials, request: Request, response: Response):
-    username = auth.check_login(creds.username, creds.password)
+    device = request.state.device
+    username = auth.check_login(creds.username, creds.password, device)
     _set_session(request, response, username)
-    return auth.account(username)
+    return auth.account(username, device)
 
 
 @app.post("/api/logout")
@@ -181,8 +204,23 @@ def logout(response: Response):
 
 
 @app.get("/api/me")
-def me(username: str = Depends(current_user)):
-    return auth.account(username)
+def me(request: Request, username: str = Depends(current_user)):
+    return auth.account(username, request.state.device)
+
+
+@app.get("/api/admin/users")
+def admin_users(_: str = Depends(require_admin)):
+    return auth.list_users()
+
+
+class ResetRequest(BaseModel):
+    username: str
+
+
+@app.post("/api/admin/reset")
+def admin_reset(req: ResetRequest, _: str = Depends(require_admin)):
+    auth.reset_user(req.username)
+    return {"ok": True}
 
 
 # ---------- routes ----------
@@ -195,9 +233,7 @@ def health():
 
 
 @app.get("/api/usage")
-def usage(username: str = Depends(current_user)):
-    if not auth.is_admin(username):
-        raise HTTPException(403, "Admin only")
+def usage(_: str = Depends(require_admin)):
     return usage_report()
 
 
@@ -240,14 +276,16 @@ async def chart(req: ChartRequest, username: str = Depends(current_user)):
 
 
 @app.post("/api/chat")
-async def chat(req: ChatRequest, username: str = Depends(current_user)):
+async def chat(req: ChatRequest, request: Request, username: str = Depends(current_user)):
+    device = request.state.device
     if req.effort and req.effort not in openai_agent.EFFORTS:
         raise HTTPException(400, f"effort must be one of {', '.join(openai_agent.EFFORTS)}")
     if not openai_agent.configured():
         raise HTTPException(503, "The server has no OPENAI_API_KEY configured")
     if req.conversation_id:
-        conv_id = owned(req.conversation_id, username)["id"]
-        auth.take_question(username)
+        conv = owned(req.conversation_id, username)
+        conv_id = conv["id"]
+        ticket = auth.take_question(username, device, conv["profile"])
     else:
         if not req.profile:
             raise HTTPException(400, "Birth details are required to start a consultation")
@@ -256,7 +294,7 @@ async def chat(req: ChatRequest, username: str = Depends(current_user)):
             p = await run_in_threadpool(resolve_birthplace, req.profile.model_dump())
         except Exception as exc:
             raise HTTPException(400, f"Birthplace lookup failed: {exc}")
-        auth.take_question(username)
+        ticket = auth.take_question(username, device, p)
         store = load_store()
         store[conv_id] = {
             "id": conv_id,
@@ -270,7 +308,7 @@ async def chat(req: ChatRequest, username: str = Depends(current_user)):
         }
         save_store(store)
     return StreamingResponse(
-        run_consultation(conv_id, req.message, req.effort, username),
+        run_consultation(conv_id, req.message, req.effort, username, device, ticket),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

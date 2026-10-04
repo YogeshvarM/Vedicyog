@@ -49,13 +49,28 @@ Things to know about a public deployment:
 
 ## Accounts and question limit
 
-Everyone must log in. Visitors create an account (username and password, stored
-PBKDF2-hashed) and each account may ask **`MAX_QUESTIONS` questions (default 5)** in
-total; follow-ups count too, and a question the model fails to answer is given back.
-The admin logs in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` and has no limit; with no
-`ADMIN_PASSWORD` set, there is no admin. Consultations belong to the account that
-created them. Sessions are 30-day signed cookies (`SECRET_KEY`). Run usage totals in
-History are shown to the admin only.
+Everyone must log in. On the login box, **Create an account** asks for a username and
+password (stored PBKDF2-hashed). Each person gets **`MAX_QUESTIONS` questions (default
+5)** in total; follow-ups count too, and a question the model fails to answer is given back.
+
+So that a second account does not get a fresh set, every question is counted against
+three things, and is only allowed while all three are under the limit:
+
+| Counter | Catches |
+|---|---|
+| The account | the plain limit |
+| The device (a long-lived cookie) | a new account made in the same browser; sign-up there is refused once its questions are used |
+| The birth chart (same date, place within ~10 km, time within 30 min) | the same person under another name, on any device. Faking the birth details to dodge it means reading the wrong chart |
+
+New accounts are also limited to `MAX_SIGNUPS_PER_IP` (default 3) per IP address per
+day. This stops casual repeats, not a determined user with fake birth details in a
+new browser; phone or email verification would be the next step.
+
+The admin logs in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` and has no limit. The
+account button shows the admin every user, with accounts that share a device or birth
+details flagged at the top, and a **Reset** to give a genuine case (say, family
+members sharing a phone) a fresh quota. Sessions are 30-day signed cookies
+(`SECRET_KEY`). Consultations belong to the account that created them.
 
 ## Thinking depth
 

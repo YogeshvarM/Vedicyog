@@ -31,7 +31,7 @@
   function setAuthMode(signup) {
     signupMode = signup;
     $("auth-title").textContent = signup ? "Create account" : "Log in";
-    $("auth-sub").textContent = signup ? "Pick a username and password. Each account can ask 5 questions." : "Log in to ask about your chart.";
+    $("auth-sub").textContent = signup ? "Pick a username and password. Each person gets 5 free questions: a second account with the same birth details or on the same device shares them." : "Log in to ask about your chart.";
     $("auth-submit").textContent = signup ? "Create account" : "Log in";
     $("auth-switch-text").textContent = signup ? "Already have an account?" : "New here?";
     $("auth-switch").textContent = signup ? "Log in" : "Create an account";
@@ -75,7 +75,8 @@
     if (!acct) { q.textContent = ""; input.disabled = false; sendBtn.disabled = state.busy; return; }
     const out = !acct.admin && acct.remaining <= 0;
     q.textContent = acct.admin ? "Admin · unlimited" : `${acct.remaining}/${acct.limit} left`;
-    q.title = acct.admin ? "No question limit" : `${acct.remaining} of ${acct.limit} questions left on this account`;
+    q.title = acct.admin ? "No question limit" : `${acct.remaining} of ${acct.limit} questions left` +
+      (acct.shared ? " (shared with another account on this device)" : "");
     q.classList.toggle("out", out);
     input.disabled = out;
     sendBtn.disabled = out || state.busy;
@@ -87,9 +88,38 @@
     const a = state.account;
     $("account-name").textContent = a.username;
     $("account-quota").textContent = a.admin ? "Admin account: no question limit."
-      : `${a.used} of ${a.limit} questions used · ${a.remaining} left.`;
+      : `${a.used} of ${a.limit} questions used · ${a.remaining} left` +
+        (a.shared ? " (another account on this device used some)." : ".");
+    $("admin-users").hidden = !a.admin;
+    if (a.admin) loadUsers();
     $("account-dialog").showModal();
   };
+
+  // Admin: every account, flagged when it shares a device or birth chart with another.
+  async function loadUsers() {
+    const box = $("admin-users");
+    box.innerHTML = '<p class="muted">Loading users…</p>';
+    const users = await api("/api/admin/users").then((r) => r.json()).catch(() => []);
+    const dupes = users.filter((u) => u.same_device.length || u.same_birth_chart.length).length;
+    box.innerHTML = `<div class="eyebrow">USERS · ${users.length}${dupes ? ` · ${dupes} LINKED` : ""}</div>` +
+      (users.length ? users.map((u) => `
+        <div class="admin-user${u.same_device.length || u.same_birth_chart.length ? " dup" : ""}">
+          <div class="admin-user-head"><b>${esc(u.username)}</b>
+            <span>${u.questions} asked · ${new Date(u.created).toLocaleDateString()}</span>
+            <button type="button" class="link" data-reset="${esc(u.username)}">Reset</button></div>
+          ${u.same_device.length ? `<div class="admin-flag">Same device as ${esc(u.same_device.join(", "))}</div>` : ""}
+          ${u.same_birth_chart.length ? `<div class="admin-flag">Same birth details as ${esc(u.same_birth_chart.join(", "))}</div>` : ""}
+          <div class="admin-meta">${u.devices} device${u.devices === 1 ? "" : "s"} · ${u.charts} birth chart${u.charts === 1 ? "" : "s"}${u.ip ? ` · signed up from ${esc(u.ip)}` : ""}</div>
+        </div>`).join("") : '<p class="muted">No users yet.</p>');
+  }
+  $("admin-users").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-reset]");
+    if (!b || !confirm(`Give ${b.dataset.reset} a fresh ${state.account?.limit || 5} questions? This also resets the device and birth details they share.`)) return;
+    await api("/api/admin/reset", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: b.dataset.reset }),
+    });
+    loadUsers();
+  });
   $("account-logout").onclick = async () => {
     await api("/api/logout", { method: "POST" }).catch(() => {});
     $("account-dialog").close();
