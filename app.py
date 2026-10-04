@@ -5,8 +5,10 @@ local, free Vedic astrology tools (PyJHora, see jyotish_tools.py) and streams th
 answer to the browser as server-sent events.
 """
 
+import hashlib
 import json
 import os
+import re
 import time
 import uuid
 from datetime import date, datetime, timezone
@@ -16,7 +18,7 @@ import requests
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -339,6 +341,29 @@ def delete_conversation(conv_id: str, username: str = Depends(current_user)):
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
+@app.middleware("http")
+async def revalidate_static(request: Request, call_next):
+    """Browsers must check for a newer copy (a cheap ETag 304 when unchanged), so a
+    stale script cached from an older deploy can never run against a newer page."""
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+def _versioned_index() -> str:
+    """index.html with ?v=<content hash> on our scripts and stylesheet (cache busting)."""
+    html = (ROOT / "static" / "index.html").read_text()
+
+    def tag(m: re.Match) -> str:
+        digest = hashlib.sha256((ROOT / "static" / m.group(1)).read_bytes()).hexdigest()[:10]
+        return f'/static/{m.group(1)}?v={digest}"'
+    return re.sub(r'/static/([\w.-]+\.(?:js|css))"', tag, html)
+
+
+INDEX_HTML = _versioned_index()
+
+
 @app.get("/")
 def index():
-    return FileResponse(ROOT / "static" / "index.html")
+    return HTMLResponse(INDEX_HTML)
