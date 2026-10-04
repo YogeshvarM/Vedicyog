@@ -137,6 +137,33 @@
   const divisionOf = (d) => parseInt(d.division, 10) || parseInt((/\bD(\d{1,2})\b/.exec(d.eyebrow || "") || [])[1], 10) || 1;
   const HINT = '<p class="k-hint">Tap a planet or a house for details.</p>';
 
+
+  // Divisional charts this reading actually used: those the model declared in "divisions",
+  // always including the chart it drew. Without declarations, offer every division.
+  function usedDivisions(d, div) {
+    const declared = (d.divisions || []).map((x) => parseInt(x.division, 10)).filter((n) => n >= 1 && n <= 60);
+    if (!declared.length) return DIVISIONS.map(([n]) => n);
+    const set = new Set([div, ...declared]);
+    return [...set].sort((a, b) => (declared.includes(a) ? declared.indexOf(a) : 99) - (declared.includes(b) ? declared.indexOf(b) : 99));
+  }
+
+  // "What this reading took from D10": purpose, the placements picked, and the conclusion.
+  function usePanel(d, n) {
+    const u = (d.divisions || []).find((x) => parseInt(x.division, 10) === n);
+    if (!u) return "";
+    const picks = (u.picks || []).map((p) => {
+      const c = code(p.planet);
+      return `<li class="use-pick ${tone(p.tone)}" data-code="${esc(c)}" role="button" tabindex="0">
+        <span class="use-planet">${glyph(c)} ${esc(c)}</span>
+        <div><div class="use-fact">${esc(p.fact)}</div>${p.meaning ? `<div class="use-meaning">${esc(p.meaning)}</div>` : ""}</div>
+      </li>`;
+    }).join("");
+    return `<div class="use-head"><span class="use-tag">D${n} · ${esc(divName(n))}</span>${u.role ? `<span class="use-role">${esc(u.role)}</span>` : ""}</div>
+      ${u.why ? `<p class="use-why">${esc(u.why)}</p>` : ""}
+      ${picks ? `<div class="use-label">What was picked from this chart <span>tap one to see it on the chart</span></div><ul class="use-picks">${picks}</ul>` : ""}
+      ${u.verdict ? `<p class="use-verdict"><b>Conclusion.</b> ${esc(u.verdict)}</p>` : ""}`;
+  }
+
   function renderChart(d) {
     const div = divisionOf(d);
     const legend = (d.legend || []).map((l) => `
@@ -148,10 +175,12 @@
       const title = esc(a.title).replace(/(→|-&gt;)/, '<span class="arr">→</span>');
       return `<div class="aspect"><div class="aspect-title">${title}</div><div class="aspect-text">${esc(a.text)}</div></div>`;
     }).join("");
-    const tabs = DIVISIONS.map(([n, name]) => `<button type="button" class="dv-tab${n === div ? " on" : ""}" data-div="${n}" title="D${n} ${name}${n === div ? " · the chart this reading uses" : ""}" aria-pressed="${n === div}">D${n}${n === div ? '<span class="dv-dot"></span>' : ""}</button>`).join("");
+    const used = usedDivisions(d, div);
+    const tabs = used.map((n) => `<button type="button" class="dv-tab${n === div ? " on" : ""}" data-div="${n}" title="D${n} ${divName(n)}${n === div ? " · the chart shown first" : ""}" aria-pressed="${n === div}">D${n}<small>${esc(divName(n))}</small></button>`).join("");
     return `<section class="card chart-card" data-chart="${esc(JSON.stringify(d))}" data-div="${div}">
       ${cardHead(d)}
-      <div class="dv-tabs" role="toolbar" aria-label="Divisional chart">${tabs}</div>
+      <div class="dv-tabs" role="toolbar" aria-label="Divisional charts used in this reading">${tabs}</div>
+      <div class="dv-use">${usePanel(d, div)}</div>
       <div class="chart-body">
         <div class="chart-canvas"><div class="k-svg">${chartSvg(d)}</div><div class="k-detail" aria-live="polite">${HINT}</div></div>
         <div class="legend">${legend}</div>
@@ -171,7 +200,16 @@
     coin: '<circle cx="12" cy="12" r="8"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5v1.5M12 16v1.5"/>',
     clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
     alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/>',
+    star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>',
+    moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>',
+    leaf: '<path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15z"/><path d="M5 19l8-8"/>',
+    compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+    book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7"/>',
+    bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
   };
+  const icon = (n) => `<svg viewBox="0 0 24 24">${ICON[n] || ICON.spark}</svg>`;
 
   function renderSignals(d) {
     const tiles = (d.signals || []).slice(0, 4).map((s) => `
@@ -247,11 +285,74 @@
     </section>`;
   }
 
-  const RENDERERS = { "astro-chart": renderChart, "astro-signals": renderSignals, "astro-timeline": renderTimeline };
+  // ---------- summary hero ----------
+  function renderSummary(d) {
+    const sc = d.score && Number.isFinite(+d.score.value) ? Math.min(100, Math.max(0, +d.score.value)) : null;
+    const R = 34, C = 2 * Math.PI * R;
+    const ring = sc === null ? "" : `<div class="sum-score" role="img" aria-label="${esc(d.score.label || "Score")} ${sc} out of 100">
+      <svg viewBox="0 0 80 80"><circle class="ring-bg" cx="40" cy="40" r="${R}"/>
+        <circle class="ring-fg" cx="40" cy="40" r="${R}" stroke-dasharray="${((sc / 100) * C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 40 40)"/></svg>
+      <b>${sc}</b><span>${esc(d.score.label || "")}</span></div>`;
+    const kws = (d.keywords || []).slice(0, 5).map((k) => `<span class="sum-kw">${esc(k)}</span>`).join("");
+    return `<section class="card summary ${tone(d.tone)}">
+      <div class="sum-main">
+        <div class="eyebrow">${esc(d.eyebrow || "At a glance")}</div>
+        <div class="sum-verdict">${esc(d.verdict)}</div>
+        ${d.summary ? `<p class="sum-text">${esc(d.summary)}</p>` : ""}
+        ${kws ? `<div class="sum-kws">${kws}</div>` : ""}
+      </div>${ring}
+    </section>`;
+  }
+
+  // ---------- highlights strip ----------
+  function renderHighlights(d) {
+    const items = (d.items || []).slice(0, 5).map((it) => `
+      <div class="hl ${tone(it.tone)}">
+        <span class="hl-icon">${icon(it.icon)}</span>
+        <div class="hl-title">${esc(it.title)}</div>
+        <p class="hl-text">${esc(it.text)}</p>
+      </div>`).join("");
+    const head = d.title ? cardHead(d) : "";
+    return `<section class="card hl-card">${head}<div class="hl-grid n${Math.min(5, (d.items || []).length)}">${items}</div></section>`;
+  }
+
+  // ---------- meters ----------
+  function renderMeters(d) {
+    const bars = (d.bars || []).slice(0, 8).map((b) => {
+      const v = Math.min(100, Math.max(0, Math.round(+b.value || 0)));
+      return `<div class="meter ${tone(b.tone)}">
+        <div class="meter-row"><span class="meter-label">${esc(b.label)}</span><span class="meter-val">${v}</span></div>
+        <div class="meter-track"><span style="width:${v}%"></span></div>
+        ${b.note ? `<div class="meter-note">${esc(b.note)}</div>` : ""}
+      </div>`;
+    }).join("");
+    return `<section class="card">${cardHead(d)}<div class="meters">${bars}</div></section>`;
+  }
+
+  // ---------- callout ----------
+  const CALLOUT_ICON = { insight: "bulb", warning: "alert", remedy: "leaf", timing: "clock", tip: "key" };
+  function renderCallout(d) {
+    const kind = CALLOUT_ICON[d.kind] ? d.kind : "insight";
+    return `<aside class="callout ${kind}">
+      <span class="callout-icon">${icon(CALLOUT_ICON[kind])}</span>
+      <div><div class="callout-kind">${esc(kind)}</div>
+        ${d.title ? `<div class="callout-title">${esc(d.title)}</div>` : ""}
+        <p class="callout-text">${esc(d.text)}</p></div>
+    </aside>`;
+  }
+
+  const RENDERERS = {
+    "astro-chart": renderChart, "astro-signals": renderSignals, "astro-timeline": renderTimeline,
+    "astro-summary": renderSummary, "astro-highlights": renderHighlights, "astro-meters": renderMeters, "astro-callout": renderCallout,
+  };
   const PENDING_LABEL = {
     "astro-chart": "Drawing the chart",
     "astro-signals": "Weighing the signals",
     "astro-timeline": "Laying out the timeline",
+    "astro-summary": "Distilling the verdict",
+    "astro-highlights": "Picking the standouts",
+    "astro-meters": "Measuring strengths",
+    "astro-callout": "Noting a key point",
   };
   const cache = new Map();
 
@@ -274,7 +375,16 @@
   }
 
   // Render a (possibly still streaming) assistant message.
+  // The model sometimes breaks off inside a block and starts the answer again. An astro fence that
+  // opens before the previous one closed marks that restart: keep only the new attempt.
+  function dropAbandonedAttempt(text) {
+    let cut = -1;
+    for (const m of text.matchAll(/```astro-[a-z]+[^\n]*\n(?:(?!```)[\s\S])*(?=```astro-)/g)) cut = m.index + m[0].length;
+    return cut < 0 ? text : text.slice(cut);
+  }
+
   function renderMessage(text, streaming) {
+    text = dropAbandonedAttempt(text);
     const re = /```(astro-[a-z]+)[^\n]*\n([\s\S]*?)```/g;
     let out = "", last = 0, m;
     while ((m = re.exec(text))) {
@@ -331,9 +441,9 @@
     return fetched.get(key);
   }
 
-  const toBlock = (c) => ({
+  const toBlock = (c, picked = []) => ({
     ascendant_sign: c.ascendant.sign_num,
-    planets: c.planets.map((p) => ({ p: p.code, house: p.house, retro: p.retrograde, note: DIGNITY_TAG[p.dignity] })),
+    planets: c.planets.map((p) => ({ p: p.code, house: p.house, retro: p.retrograde, note: DIGNITY_TAG[p.dignity], highlight: picked.includes(p.code) })),
   });
 
   // Per-card state lives on the element; a re-render simply starts fresh.
@@ -446,6 +556,9 @@
     });
     const svg = card.querySelector(".k-svg"), legend = card.querySelector(".legend"), detail = card.querySelector(".k-detail");
     card.classList.remove("focus");
+    const use = card.querySelector(".dv-use");
+    use.innerHTML = usePanel(st.orig, n);
+    const picked = ((st.orig.divisions || []).find((x) => parseInt(x.division, 10) === n)?.picks || []).map((p) => code(p.planet));
     if (n === st.div) {
       st.block = st.orig;
       card.classList.remove("alt");
@@ -458,7 +571,7 @@
     detail.innerHTML = `<p class="k-hint"><span class="pulse"></span>Calculating D${n} ${divName(n)}…</p>`;
     fetchChart(n).then((c) => {
       if (st.token !== token) return;
-      st.block = toBlock(c);
+      st.block = toBlock(c, picked);
       svg.innerHTML = chartSvg(st.block);
       legend.innerHTML = `<div class="dv-head"><div class="eyebrow">D${n} ${esc(divName(n)).toUpperCase()}</div>
           Lagna ${esc(c.ascendant.sign)} ${fmtDeg(c.ascendant.degree)}</div>` +

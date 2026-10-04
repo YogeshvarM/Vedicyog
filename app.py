@@ -119,6 +119,16 @@ def sse(event: dict) -> str:
     return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
 
+_ABANDONED = re.compile(r"```astro-[a-z]+[^\n]*\n(?:(?!```)[\s\S])*(?=```astro-)")
+
+
+def drop_abandoned_attempt(text: str) -> str:
+    """The model sometimes breaks off inside a rich block and starts the answer again.
+    A new astro fence opening before the last one closed marks the restart: keep the new attempt."""
+    ends = [m.end() for m in _ABANDONED.finditer(text)]
+    return text[ends[-1]:] if ends else text
+
+
 async def run_consultation(conv_id: str, message: str, effort: str | None, username: str,
                            device: str, ticket: dict | None):
     convs = load_store()
@@ -158,6 +168,7 @@ async def run_consultation(conv_id: str, message: str, effort: str | None, usern
 
     if not answer.strip():
         auth.refund_question(ticket)  # no answer: the question does not count
+    answer = drop_abandoned_attempt(answer)
     run = rec.finish(answer, error)
     yield sse({"type": "done", "run": run, "account": auth.account(username, device)})
 
