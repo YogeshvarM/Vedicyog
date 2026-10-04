@@ -1,6 +1,7 @@
 """User accounts, sessions and the question quota.
 
-- Users sign up with a username and password (PBKDF2-hashed) stored in users.json.
+- Users sign up with a username and password (PBKDF2-hashed), kept in the store
+  (Postgres with DATABASE_URL, else users.json; see store.py).
 - The admin account comes from ADMIN_USERNAME / ADMIN_PASSWORD (never from code)
   and has no question limit.
 - Sessions are HMAC-signed cookies keyed by SECRET_KEY, so they survive restarts.
@@ -20,16 +21,16 @@ New accounts are also limited per IP address per day (MAX_SIGNUPS_PER_IP, defaul
 import base64
 import hashlib
 import hmac
-import json
 import os
 import re
 import secrets
 import threading
 import time
 from datetime import datetime, timezone
-from pathlib import Path
 
 from fastapi import Cookie, HTTPException
+
+import store
 
 COOKIE = "vy_session"
 DEVICE_COOKIE = "vy_device"
@@ -64,13 +65,8 @@ def now_iso() -> str:
 
 # ---------- storage ----------
 
-def _users_file() -> Path:
-    return Path(os.getenv("DATA_DIR", Path(__file__).parent / "data")) / "users.json"
-
-
 def _load() -> dict:
-    f = _users_file()
-    data = json.loads(f.read_text()) if f.exists() else {}
+    data = store.get("users", {})
     if data and "users" not in data:  # first version stored only the users
         data = {"users": data}
     for key, empty in (("users", {}), ("devices", {}), ("charts", []), ("signups", [])):
@@ -81,11 +77,7 @@ def _load() -> dict:
 
 
 def _save(data: dict) -> None:
-    f = _users_file()
-    f.parent.mkdir(parents=True, exist_ok=True)
-    tmp = f.with_suffix(".tmp")
-    tmp.write_text(json.dumps(data, indent=2))
-    tmp.replace(f)
+    store.put("users", data)
 
 
 def _hash(password: str, salt: bytes) -> str:
@@ -131,8 +123,8 @@ def create_user(username: str, password: str, device: str | None, ip: str | None
     username = username.strip().lower()
     if not USERNAME_RE.fullmatch(username):
         raise HTTPException(400, "Username must be 3-32 characters: letters, numbers, _ . -")
-    if len(password) < 6:
-        raise HTTPException(400, "Password must be at least 6 characters")
+    if not password:
+        raise HTTPException(400, "Enter a password")
     if username == admin_name():
         raise HTTPException(400, "That username is taken")
     with _lock:

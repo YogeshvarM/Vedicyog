@@ -19,5 +19,7 @@ services:
         sync: false # set in the Render dashboard; never commit it
       - key: SECRET_KEY
         generateValue: true # signs login cookies
+      - key: DATABASE_URL
+        sync: false # Postgres connection string (e.g. a free Neon database); keeps accounts across deploys
       - key: MAX_QUESTIONS
         value: "5"

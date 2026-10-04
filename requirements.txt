@@ -3,6 +3,8 @@ uvicorn[standard]
 python-dotenv
 openai
 requests
+# Postgres for accounts and conversations when DATABASE_URL is set
+psycopg[binary]
 # astrology engine (free, local) and its undeclared dependencies
 pyjhora==4.8.7
 pyswisseph

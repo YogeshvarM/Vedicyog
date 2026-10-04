@@ -39,18 +39,17 @@ Things to know about a public deployment:
 
 - **Cost**: every visitor's question is billed to your OpenAI key. Set a monthly
   budget limit in the OpenAI dashboard. Free-tier OpenAI accounts hit rate limits fast.
-- **Storage**: conversations and logs are JSON files under `data/`. On Render's free
-  plan the disk is wiped on every deploy and restart. For history that survives, add a
-  persistent disk (paid plans) and set `DATA_DIR` to its mount path, e.g. `/var/data`.
-- **Accounts**: users and their question counts live in `data/users.json`, so on the
-  free plan they are wiped with the disk too, and everyone's quota resets. Use a
-  persistent disk if the limit has to hold.
+- **Storage: set `DATABASE_URL`.** Accounts (hashed passwords, question counts) and
+  conversations are kept in Postgres when `DATABASE_URL` is set; a free
+  [Neon](https://neon.tech) database works. Without it they are JSON files under
+  `data/`, and Render's free plan wipes that disk on every deploy and restart, so
+  everyone's account disappears. `/api/health` shows `"storage": "postgres"` or `"files"`.
 - The free plan sleeps after 15 minutes idle; the first request then takes ~1 minute.
 
 ## Accounts and question limit
 
 Everyone must log in. On the login box, **Create an account** asks for a username and
-password (stored PBKDF2-hashed). Each person gets **`MAX_QUESTIONS` questions (default
+password (any length; stored PBKDF2-hashed, never in plain text). Each person gets **`MAX_QUESTIONS` questions (default
 5)** in total; follow-ups count too, and a question the model fails to answer is given back.
 
 So that a second account does not get a fresh set, every question is counted against
@@ -86,6 +85,7 @@ are saved with it; run details show the effort and reasoning tokens.
 | `jyotish_tools.py` | The free astrology tools (PyJHora) and their function-tool definitions |
 | `openai_agent.py` | Function-calling loop on the OpenAI Responses API; streams text, thinking and tool events |
 | `app.py` | FastAPI: geocodes the birthplace once (OpenStreetMap), streams SSE, stores conversations per account |
+| `store.py` | Storage: Postgres (`DATABASE_URL`) or JSON files |
 | `auth.py` | Accounts, signed session cookies, admin and the per-account question limit |
 | `prompts.py` | The astrologer system prompt: which tools to call per topic, and the JSON contract for rich blocks |
 | `telemetry.py` | Run logging, token accounting and cost |

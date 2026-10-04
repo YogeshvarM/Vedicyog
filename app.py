@@ -24,6 +24,7 @@ from pydantic import BaseModel
 
 import auth
 import openai_agent
+import store
 from auth import current_user, require_admin
 from jyotish_tools import chart_data, resolve_birthplace
 from prompts import build_system_prompt
@@ -37,7 +38,6 @@ MAX_TURNS = int(os.getenv("ASTRO_MAX_TURNS", "30"))
 USD_INR = float(os.getenv("USD_INR", "96"))
 
 DATA_DIR = Path(os.getenv("DATA_DIR", ROOT / "data"))
-STORE = DATA_DIR / "conversations.json"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 setup_logging()
@@ -68,15 +68,11 @@ def client_ip(request: Request) -> str | None:
 # ---------- conversation store ----------
 
 def load_store() -> dict:
-    if STORE.exists():
-        return json.loads(STORE.read_text())
-    return {}
+    return store.get("conversations", {})
 
 
-def save_store(store: dict) -> None:
-    tmp = STORE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(store, indent=2, ensure_ascii=False))
-    tmp.replace(STORE)
+def save_store(convs: dict) -> None:
+    store.put("conversations", convs)
 
 
 def now_iso() -> str:
@@ -125,10 +121,10 @@ def sse(event: dict) -> str:
 
 async def run_consultation(conv_id: str, message: str, effort: str | None, username: str,
                            device: str, ticket: dict | None):
-    store = load_store()
-    conv = store[conv_id]
+    convs = load_store()
+    conv = convs[conv_id]
     conv["messages"].append({"role": "user", "text": message, "at": now_iso()})
-    save_store(store)
+    save_store(convs)
 
     model = openai_agent.model_name()
     effort = effort or openai_agent.DEFAULT_EFFORT
@@ -165,15 +161,15 @@ async def run_consultation(conv_id: str, message: str, effort: str | None, usern
     run = rec.finish(answer, error)
     yield sse({"type": "done", "run": run, "account": auth.account(username, device)})
 
-    store = load_store()
-    store[conv_id]["session_id"] = conv.get("session_id")
+    convs = load_store()
+    convs[conv_id]["session_id"] = conv.get("session_id")
     if answer.strip():
         msg = {"role": "assistant", "text": answer, "at": now_iso(), "run": run}
         if thinking.strip():
             msg["thinking"] = thinking.strip()
-        store[conv_id]["messages"].append(msg)
-    store[conv_id]["updated"] = now_iso()
-    save_store(store)
+        convs[conv_id]["messages"].append(msg)
+    convs[conv_id]["updated"] = now_iso()
+    save_store(convs)
 
 
 # ---------- accounts ----------
@@ -229,7 +225,7 @@ def admin_reset(req: ResetRequest, _: str = Depends(require_admin)):
 
 @app.get("/api/health")
 def health():
-    return {"engine": "PyJHora (local)", "model": openai_agent.model_name(),
+    return {"engine": "PyJHora (local)", "model": openai_agent.model_name(), "storage": store.backend(),
             "available": openai_agent.configured(),
             "efforts": openai_agent.EFFORTS, "default_effort": openai_agent.DEFAULT_EFFORT}
 
@@ -297,8 +293,8 @@ async def chat(req: ChatRequest, request: Request, username: str = Depends(curre
         except Exception as exc:
             raise HTTPException(400, f"Birthplace lookup failed: {exc}")
         ticket = auth.take_question(username, device, p)
-        store = load_store()
-        store[conv_id] = {
+        convs = load_store()
+        convs[conv_id] = {
             "id": conv_id,
             "title": f"{p['name']} · {req.message[:48]}",
             "owner": username,
@@ -308,7 +304,7 @@ async def chat(req: ChatRequest, request: Request, username: str = Depends(curre
             "created": now_iso(),
             "updated": now_iso(),
         }
-        save_store(store)
+        save_store(convs)
     return StreamingResponse(
         run_consultation(conv_id, req.message, req.effort, username, device, ticket),
         media_type="text/event-stream",
@@ -332,9 +328,9 @@ def get_conversation(conv_id: str, username: str = Depends(current_user)):
 @app.delete("/api/conversations/{conv_id}")
 def delete_conversation(conv_id: str, username: str = Depends(current_user)):
     owned(conv_id, username)
-    store = load_store()
-    store.pop(conv_id, None)
-    save_store(store)
+    convs = load_store()
+    convs.pop(conv_id, None)
+    save_store(convs)
     return {"ok": True}
 
 
