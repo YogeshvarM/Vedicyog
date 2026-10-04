@@ -22,6 +22,9 @@ from jhora.horoscope.chart import ashtakavarga, charts, dosha, house, strength, 
 from jhora.horoscope.dhasa.graha import vimsottari
 from jhora.panchanga import drik
 
+# PyJHora defaults to TRUE_PUSHYA (about 0.88 deg off Lahiri), which shifts nakshatras and dasha dates.
+drik.set_ayanamsa_mode("LAHIRI")
+
 utils.set_language("en")
 log = logging.getLogger("vedicyog.tools")
 
