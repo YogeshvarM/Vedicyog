@@ -7,7 +7,6 @@ answer to the browser as server-sent events.
 
 import json
 import os
-import re
 import time
 import uuid
 from datetime import date, datetime, timezone
@@ -15,13 +14,15 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+import auth
 import openai_agent
+from auth import current_user
 from jyotish_tools import chart_data, resolve_birthplace
 from prompts import build_system_prompt
 from telemetry import RunRecorder, log, setup_logging, usage_report
@@ -59,19 +60,17 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-# Each browser sends a random id; conversations are only listed and opened for the
-# browser that created them, so visitors never see each other's birth details.
-def client_id(value: str | None) -> str:
-    if not value or not re.fullmatch(r"[A-Za-z0-9_-]{16,64}", value):
-        raise HTTPException(400, "Missing client id")
-    return value
-
-
-def owned(conv_id: str, client: str) -> dict:
+# Conversations belong to the account that created them.
+def owned(conv_id: str, username: str) -> dict:
     conv = load_store().get(conv_id)
-    if not conv or conv.get("owner") != client:
+    if not conv or conv.get("owner") != username:
         raise HTTPException(404, "Conversation not found")
     return conv
+
+
+class Credentials(BaseModel):
+    username: str
+    password: str
 
 
 class Profile(BaseModel):
@@ -101,7 +100,7 @@ def sse(event: dict) -> str:
     return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
 
-async def run_consultation(conv_id: str, message: str, effort: str | None = None):
+async def run_consultation(conv_id: str, message: str, effort: str | None, username: str):
     store = load_store()
     conv = store[conv_id]
     conv["messages"].append({"role": "user", "text": message, "at": now_iso()})
@@ -137,8 +136,10 @@ async def run_consultation(conv_id: str, message: str, effort: str | None = None
         conv["session_id"] = state["response_id"]
         rec.on_openai_result(model, state["response_id"], openai_agent.price(model))
 
+    if not answer.strip():
+        auth.refund_question(username)  # no answer: the question does not count
     run = rec.finish(answer, error)
-    yield sse({"type": "done", "run": run})
+    yield sse({"type": "done", "run": run, "account": auth.account(username)})
 
     store = load_store()
     store[conv_id]["session_id"] = conv.get("session_id")
@@ -151,6 +152,39 @@ async def run_consultation(conv_id: str, message: str, effort: str | None = None
     save_store(store)
 
 
+# ---------- accounts ----------
+
+def _set_session(request: Request, response: Response, username: str) -> None:
+    https = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+    response.set_cookie(auth.COOKIE, auth.make_session(username), max_age=auth.SESSION_DAYS * 86400,
+                        httponly=True, samesite="lax", secure=https)
+
+
+@app.post("/api/signup")
+def signup(creds: Credentials, request: Request, response: Response):
+    username = auth.create_user(creds.username, creds.password)
+    _set_session(request, response, username)
+    return auth.account(username)
+
+
+@app.post("/api/login")
+def login(creds: Credentials, request: Request, response: Response):
+    username = auth.check_login(creds.username, creds.password)
+    _set_session(request, response, username)
+    return auth.account(username)
+
+
+@app.post("/api/logout")
+def logout(response: Response):
+    response.delete_cookie(auth.COOKIE)
+    return {"ok": True}
+
+
+@app.get("/api/me")
+def me(username: str = Depends(current_user)):
+    return auth.account(username)
+
+
 # ---------- routes ----------
 
 @app.get("/api/health")
@@ -161,7 +195,9 @@ def health():
 
 
 @app.get("/api/usage")
-def usage():
+def usage(username: str = Depends(current_user)):
+    if not auth.is_admin(username):
+        raise HTTPException(403, "Admin only")
     return usage_report()
 
 
@@ -183,12 +219,12 @@ def fx():
 
 
 @app.post("/api/chart")
-async def chart(req: ChartRequest, x_client_id: str | None = Header(None)):
+async def chart(req: ChartRequest, username: str = Depends(current_user)):
     """Any divisional chart for the native, for the chart card's D1/D9/D10... tabs."""
     if not 1 <= req.division <= 60:
         raise HTTPException(400, "division must be 1-60")
     if req.conversation_id:
-        profile = owned(req.conversation_id, client_id(x_client_id))["profile"]
+        profile = owned(req.conversation_id, username)["profile"]
     elif req.profile:
         try:
             profile = await run_in_threadpool(resolve_birthplace, req.profile.model_dump())
@@ -204,14 +240,14 @@ async def chart(req: ChartRequest, x_client_id: str | None = Header(None)):
 
 
 @app.post("/api/chat")
-async def chat(req: ChatRequest, x_client_id: str | None = Header(None)):
-    client = client_id(x_client_id)
+async def chat(req: ChatRequest, username: str = Depends(current_user)):
     if req.effort and req.effort not in openai_agent.EFFORTS:
         raise HTTPException(400, f"effort must be one of {', '.join(openai_agent.EFFORTS)}")
     if not openai_agent.configured():
         raise HTTPException(503, "The server has no OPENAI_API_KEY configured")
     if req.conversation_id:
-        conv_id = owned(req.conversation_id, client)["id"]
+        conv_id = owned(req.conversation_id, username)["id"]
+        auth.take_question(username)
     else:
         if not req.profile:
             raise HTTPException(400, "Birth details are required to start a consultation")
@@ -220,11 +256,12 @@ async def chat(req: ChatRequest, x_client_id: str | None = Header(None)):
             p = await run_in_threadpool(resolve_birthplace, req.profile.model_dump())
         except Exception as exc:
             raise HTTPException(400, f"Birthplace lookup failed: {exc}")
+        auth.take_question(username)
         store = load_store()
         store[conv_id] = {
             "id": conv_id,
             "title": f"{p['name']} · {req.message[:48]}",
-            "owner": client,
+            "owner": username,
             "profile": p,
             "session_id": None,
             "messages": [],
@@ -233,29 +270,28 @@ async def chat(req: ChatRequest, x_client_id: str | None = Header(None)):
         }
         save_store(store)
     return StreamingResponse(
-        run_consultation(conv_id, req.message, req.effort),
+        run_consultation(conv_id, req.message, req.effort, username),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
 @app.get("/api/conversations")
-def list_conversations(x_client_id: str | None = Header(None)):
-    client = client_id(x_client_id)
-    convs = sorted((c for c in load_store().values() if c.get("owner") == client),
+def list_conversations(username: str = Depends(current_user)):
+    convs = sorted((c for c in load_store().values() if c.get("owner") == username),
                    key=lambda c: c["updated"], reverse=True)
     return [{k: c[k] for k in ("id", "title", "profile", "updated")} for c in convs]
 
 
 @app.get("/api/conversations/{conv_id}")
-def get_conversation(conv_id: str, x_client_id: str | None = Header(None)):
-    conv = owned(conv_id, client_id(x_client_id))
+def get_conversation(conv_id: str, username: str = Depends(current_user)):
+    conv = owned(conv_id, username)
     return {k: v for k, v in conv.items() if k != "owner"}
 
 
 @app.delete("/api/conversations/{conv_id}")
-def delete_conversation(conv_id: str, x_client_id: str | None = Header(None)):
-    owned(conv_id, client_id(x_client_id))
+def delete_conversation(conv_id: str, username: str = Depends(current_user)):
+    owned(conv_id, username)
     store = load_store()
     store.pop(conv_id, None)
     save_store(store)

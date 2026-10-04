@@ -25,6 +25,9 @@
         <button class="icon-btn" id="btn-history" title="History" aria-label="History">
           <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
         </button>
+        <button class="icon-btn" id="btn-account" title="Account" aria-label="Account">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </button>
         <button class="icon-btn" id="btn-settings" title="Birth details" aria-label="Birth details">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
         </button>
@@ -46,6 +49,7 @@
         <button type="button" role="radio" data-effort="medium">Medium</button>
         <button type="button" role="radio" data-effort="high">High</button>
         <button type="button" role="radio" data-effort="xhigh" title="Deepest and slowest">Max</button>
+        <span id="quota" class="quota"></span>
       </div>
       <div class="composer-row">
         <textarea id="input" rows="1" placeholder="Ask about career, marriage, timing, dasha..." autocomplete="off"></textarea>
@@ -78,6 +82,35 @@
       <div class="dialog-actions">
         <button type="button" class="ghost" id="profile-cancel">Cancel</button>
         <button type="submit" class="primary">Save & start new consultation</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Log in / create account -->
+  <dialog id="auth-dialog" class="dialog">
+    <form id="auth-form" method="dialog">
+      <div class="eyebrow">VEDICYOG</div>
+      <h2 id="auth-title">Log in</h2>
+      <p class="muted" id="auth-sub">Log in to ask about your chart.</p>
+      <label>Username<input name="username" required autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+      <label>Password<input name="password" type="password" required minlength="6" autocomplete="current-password"></label>
+      <p class="auth-error" id="auth-error" hidden></p>
+      <div class="dialog-actions">
+        <button type="submit" class="primary" id="auth-submit">Log in</button>
+      </div>
+      <p class="auth-switch"><span id="auth-switch-text">New here?</span> <button type="button" class="link" id="auth-switch">Create an account</button></p>
+    </form>
+  </dialog>
+
+  <!-- Account -->
+  <dialog id="account-dialog" class="dialog">
+    <form method="dialog">
+      <div class="eyebrow">ACCOUNT</div>
+      <h2 id="account-name"></h2>
+      <p class="muted" id="account-quota"></p>
+      <div class="dialog-actions">
+        <button type="button" class="ghost" id="account-logout">Log out</button>
+        <button type="submit" class="primary">Close</button>
       </div>
     </form>
   </dialog>

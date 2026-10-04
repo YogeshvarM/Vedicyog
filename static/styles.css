@@ -575,3 +575,16 @@ svg { display: block; }
 .thinking-body { margin-top: 6px; font-size: 13.5px; line-height: 1.6; color: var(--ink-2); max-height: 320px; overflow-y: auto; }
 .thinking-body p { margin: 0 0 8px; }
 .thinking-body strong { color: var(--ink); }
+
+/* ---------- accounts and question quota ---------- */
+.quota { margin-left: auto; padding-left: 10px; flex: none; font: 600 11.5px/1 var(--mono); color: var(--ink-3); white-space: nowrap; }
+.quota.out { color: var(--bad); }
+.auth-error { margin: -4px 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--bad-bg); color: var(--bad); font-size: 13.5px; }
+.auth-switch { margin: 16px 0 0; text-align: center; font-size: 14px; color: var(--ink-2); }
+.link { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+#auth-dialog .dialog-actions .primary { width: 100%; }
+@media (max-width: 480px) {
+  .topbar h1 { display: none; }
+  .effort-label { display: none; }
+  .effort button { padding: 0 9px; }
+}

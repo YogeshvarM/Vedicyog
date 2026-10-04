@@ -6,7 +6,7 @@
   const input = $("input"), sendBtn = $("send");
   const dialog = $("profile-dialog"), form = $("profile-form");
 
-  const state = { conversationId: null, profile: loadProfile(), busy: false, usdInr: null, effort: loadEffort() };
+  const state = { conversationId: null, profile: loadProfile(), busy: false, usdInr: null, effort: loadEffort(), account: null };
   // divisional-chart tabs fetch charts for the open consultation, or the saved birth details
   window.AstroBlocks.context = () => (state.conversationId
     ? { conversation_id: state.conversationId } : { profile: state.profile });
@@ -22,18 +22,82 @@
     ["Today", "What does today hold for me? Include panchang highlights."],
   ];
 
-  // A random id per browser: the server only lists and opens this browser's consultations.
-  const CLIENT_ID = (() => {
-    let id = null;
-    try { id = localStorage.getItem("astro.client"); } catch { /* storage unavailable */ }
-    if (!/^[A-Za-z0-9_-]{16,64}$/.test(id || "")) {
-      id = Array.from(crypto.getRandomValues(new Uint8Array(18)), (b) => b.toString(16).padStart(2, "0")).join("");
-      try { localStorage.setItem("astro.client", id); } catch { /* storage unavailable */ }
+  const api = (url, opts) => fetch(url, opts); // same-origin: the session cookie goes along
+
+  // ---------- account: login, sign-up and the question quota ----------
+  const authDialog = $("auth-dialog"), authForm = $("auth-form");
+  let signupMode = false;
+
+  function setAuthMode(signup) {
+    signupMode = signup;
+    $("auth-title").textContent = signup ? "Create account" : "Log in";
+    $("auth-sub").textContent = signup ? "Pick a username and password. Each account can ask 5 questions." : "Log in to ask about your chart.";
+    $("auth-submit").textContent = signup ? "Create account" : "Log in";
+    $("auth-switch-text").textContent = signup ? "Already have an account?" : "New here?";
+    $("auth-switch").textContent = signup ? "Log in" : "Create an account";
+    authForm.password.autocomplete = signup ? "new-password" : "current-password";
+    $("auth-error").hidden = true;
+  }
+  $("auth-switch").onclick = () => setAuthMode(!signupMode);
+  authDialog.addEventListener("cancel", (e) => e.preventDefault()); // logging in is required
+
+  function showAuth() {
+    setAuthMode(false);
+    if (!authDialog.open) authDialog.showModal();
+  }
+
+  authForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = $("auth-submit");
+    btn.disabled = true;
+    try {
+      const res = await api(signupMode ? "/api/signup" : "/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: authForm.username.value, password: authForm.password.value }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.detail || res.statusText);
+      authForm.reset();
+      authDialog.close();
+      signedIn(body);
+    } catch (err) {
+      $("auth-error").textContent = err.message;
+      $("auth-error").hidden = false;
+    } finally {
+      btn.disabled = false;
     }
-    return id;
-  })();
-  const api = (url, opts = {}) => fetch(url, { ...opts, headers: { ...(opts.headers || {}), "X-Client-Id": CLIENT_ID } });
-  window.AstroBlocks.headers = () => ({ "X-Client-Id": CLIENT_ID });
+  });
+
+  function showAccount(acct) {
+    state.account = acct;
+    const q = $("quota");
+    if (!acct) { q.textContent = ""; input.disabled = false; sendBtn.disabled = state.busy; return; }
+    const out = !acct.admin && acct.remaining <= 0;
+    q.textContent = acct.admin ? "Admin · unlimited" : `${acct.remaining}/${acct.limit} left`;
+    q.title = acct.admin ? "No question limit" : `${acct.remaining} of ${acct.limit} questions left on this account`;
+    q.classList.toggle("out", out);
+    input.disabled = out;
+    sendBtn.disabled = out || state.busy;
+    input.placeholder = out ? `You have used all ${acct.limit} questions on this account.` : "Ask about career, marriage, timing, dasha...";
+  }
+
+  $("btn-account").onclick = () => {
+    if (!state.account) return showAuth();
+    const a = state.account;
+    $("account-name").textContent = a.username;
+    $("account-quota").textContent = a.admin ? "Admin account: no question limit."
+      : `${a.used} of ${a.limit} questions used · ${a.remaining} left.`;
+    $("account-dialog").showModal();
+  };
+  $("account-logout").onclick = async () => {
+    await api("/api/logout", { method: "POST" }).catch(() => {});
+    $("account-dialog").close();
+    showAccount(null);
+    state.conversationId = null;
+    welcome();
+    showAuth();
+  };
 
   function showEffort() {
     document.querySelectorAll("#effort [data-effort]").forEach((b) => {
@@ -231,7 +295,12 @@
           message: text, conversation_id: state.conversationId, profile: state.profile, effort: state.effort,
         }),
       });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+      if (!res.ok) {
+        const detail = (await res.json().catch(() => ({}))).detail || res.statusText;
+        if (res.status === 401) showAuth();
+        if (res.status === 403) api("/api/me").then((r) => r.json()).then(showAccount).catch(() => {});
+        throw Object.assign(new Error(detail), { status: res.status });
+      }
 
       const reader = res.body.getReader();
       const dec = new TextDecoder();
@@ -294,6 +363,7 @@
             const r = ev.run || {};
             ai.meta.innerHTML = `${esc(shortModel(Object.keys(r.models || {})[0] || model))}${effort ? ` · think ${EFFORT_NAME[effort]}` : ""} · ${usd(r.cost_usd)}`;
             ai.runSlot.innerHTML = renderRun(r);
+            if (ev.account) showAccount(ev.account);
             if (thought) {
               ai.thinking.open = false;
               ai.thinkingLabel.textContent = thoughtLabel(thinkEnd - thinkStart, effort, r.totals?.reasoning_tokens);
@@ -302,7 +372,9 @@
         }
       }
     } catch (err) {
-      acc += `\n\n> **Could not reach VedicYog:** ${err.message}`;
+      acc += err.status === 403 ? `> **Question limit reached:** ${err.message}`
+        : err.status === 401 ? "> **Please log in** to ask a question."
+        : `\n\n> **Could not reach VedicYog:** ${err.message}`;
     }
 
     cancelAnimationFrame(frame);
@@ -311,7 +383,7 @@
       ? `<span class="activity-title">Consulted ${tools} calculation${tools === 1 ? "" : "s"}</span>`
       : "";
     state.busy = false;
-    sendBtn.disabled = false;
+    showAccount(state.account); // re-enables sending unless the quota is used up
     input.focus();
   }
 
@@ -419,9 +491,16 @@
   showNative(state.profile);
   welcome();
 
-  // /?c=<conversation id> opens that consultation
+  // Logged in? Then open a /?c=<conversation id> deep link; otherwise ask to log in.
   const deepLink = new URLSearchParams(location.search).get("c");
-  if (deepLink) openConversation(deepLink);
+  function signedIn(acct) {
+    showAccount(acct);
+    if (deepLink && !state.conversationId) openConversation(deepLink);
+  }
+  api("/api/me").then(async (r) => {
+    if (r.ok) signedIn(await r.json());
+    else if (!new URLSearchParams(location.search).has("demo")) showAuth();
+  }).catch(() => {});
 
   // /?demo renders a sample consultation without calling the agent
   if (new URLSearchParams(location.search).has("demo")) {

@@ -297,7 +297,6 @@
 
   // ---------- interaction: divisional tabs, planet/house details, timeline scrubbing ----------
   // app.js sets AstroBlocks.context to return {conversation_id, profile} for /api/chart.
-  // app.js also sets AstroBlocks.headers for the per-browser client id.
   const api = { context: () => ({}), headers: () => ({}) };
   const NAME = {
     Su: "Sun", Mo: "Moon", Ma: "Mars", Me: "Mercury", Ju: "Jupiter", Ve: "Venus", Sa: "Saturn",
