@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VedicYog Consultation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Chat Consultation</h1>
+        <span id="status" class="badge">connecting</span>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="btn-new" title="New consultation" aria-label="New consultation">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-history" title="History" aria-label="History">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-settings" title="Birth details" aria-label="Birth details">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="native" class="native-strip" hidden></div>
+
+    <main class="panel">
+      <div id="thread" class="thread"></div>
+    </main>
+
+    <form id="composer" class="composer">
+      <div id="suggestions" class="suggestions"></div>
+      <div id="effort" class="effort" role="radiogroup" aria-label="Thinking depth">
+        <span class="effort-label">Think</span>
+        <button type="button" role="radio" data-effort="none" title="Answer straight away">Off</button>
+        <button type="button" role="radio" data-effort="low">Low</button>
+        <button type="button" role="radio" data-effort="medium">Medium</button>
+        <button type="button" role="radio" data-effort="high">High</button>
+        <button type="button" role="radio" data-effort="xhigh" title="Deepest and slowest">Max</button>
+      </div>
+      <div class="composer-row">
+        <textarea id="input" rows="1" placeholder="Ask about career, marriage, timing, dasha..." autocomplete="off"></textarea>
+        <button id="send" class="send" type="submit" aria-label="Send">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Birth details -->
+  <dialog id="profile-dialog" class="dialog">
+    <form id="profile-form" method="dialog">
+      <div class="eyebrow">JANMA DETAILS</div>
+      <h2>Birth details</h2>
+      <p class="muted">Exact birth time matters: the Lagna shifts roughly every two hours.</p>
+      <label>Name<input name="name" required placeholder="Your name"></label>
+      <div class="two">
+        <label>Birth date<input name="date" type="date" required></label>
+        <label>Birth time<input name="time" type="time" step="1" required></label>
+      </div>
+      <label>Birthplace<input name="place" required placeholder="City, state, country"></label>
+      <label>Language
+        <select name="lang">
+          <option value="en">English</option><option value="hi">Hindi</option>
+          <option value="es">Spanish</option><option value="fr">French</option>
+          <option value="de">German</option><option value="pt">Portuguese</option>
+        </select>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="ghost" id="profile-cancel">Cancel</button>
+        <button type="submit" class="primary">Save & start new consultation</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- History -->
+  <aside id="history" class="drawer" hidden>
+    <div class="drawer-head">
+      <div><div class="eyebrow">ARCHIVE</div><h2>Consultations</h2></div>
+      <button class="icon-btn" id="history-close" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div id="usage-summary" class="usage-summary"></div>
+    <ul id="history-list" class="history-list"></ul>
+  </aside>
+  <div id="scrim" class="scrim" hidden></div>
+
+  <script src="/static/blocks.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

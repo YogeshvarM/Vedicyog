@@ -1,8 +1,17 @@
 fastapi
 uvicorn[standard]
-jyotishganit
+python-dotenv
+openai
+requests
+# astrology engine (free, local) and its undeclared dependencies
+pyjhora==4.8.7
+pyswisseph
 geopy
 timezonefinder
+geocoder
 pytz
-pydantic
-aiofiles
+python-dateutil
+reverse_geocode
+ephem
+hijridate
+numpy
